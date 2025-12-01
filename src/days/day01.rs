@@ -35,11 +35,12 @@ impl FromStr for DialRotateDirection {
 pub struct Dial {
     pub position: u8,
     pub password: u16,
+    pub new_password: u16,
 }
 
 impl Dial {
     pub fn make_dial() -> Dial {
-        Dial { position: 50, password: 0 }
+        Dial { position: 50, password: 0, new_password: 0 }
     }
 
     pub fn rotate(&mut self, direction: DialRotateDirection) {
@@ -47,6 +48,23 @@ impl Dial {
             DialRotateDirection::Right(distance) => self.position as i16 + distance % 100,
             DialRotateDirection::Left(distance) => self.position as i16 - distance % 100,
         };
+
+        let how_many_times_points_at_0: i16 = match direction {
+            DialRotateDirection::Right(distance) => {
+                (self.position as i16 + distance) / 100
+            },
+            DialRotateDirection::Left(distance) => {
+                if self.position == 0 {
+                    distance / 100
+                } else if distance >= self.position as i16 {
+                    1 + (distance - self.position as i16) / 100
+                } else {
+                    0
+                }
+            },
+        };
+
+        self.new_password = self.new_password + how_many_times_points_at_0 as u16;
 
         match new_position {
             i16::MIN..=-1 => self.position = (new_position + 100) as u8,
@@ -77,7 +95,18 @@ impl DaySolver for Day1Solver {
     }
 
     fn solve_part2(&self, input: &str) -> Result<String, DayError> {
-        Ok(String::new())
+        let instructions: Vec<DialRotateDirection> = input
+            .lines()
+            .map(|line| line.parse())
+            .collect::<Result<Vec<DialRotateDirection>, DayError>>(
+            )?;
+        let mut dial = Dial::make_dial();
+
+        for instruction in instructions {
+            dial.rotate(instruction);
+        }
+
+        Ok(dial.new_password.to_string())
     }
 }
 
@@ -100,7 +129,7 @@ L82
 
     #[test]
     fn test_dial() {
-        let mut dial = Dial { position: 99, password: 0};
+        let mut dial = Dial { position: 99, password: 0, new_password: 0};
         dial.rotate(DialRotateDirection::Left(99));
         assert_eq!(dial.position, 0);
     }
@@ -111,9 +140,9 @@ L82
         assert_eq!(solution, "3")
     }
 
-    // #[test]
-    // fn part2() {
-    //     let solution = Day1Solver {}.solve_part2(get_example_input()).unwrap();
-    //     assert_eq!(solution, "31")
-    // }
+    #[test]
+    fn part2() {
+        let solution = Day1Solver {}.solve_part2(get_example_input()).unwrap();
+        assert_eq!(solution, "6")
+    }
 }
