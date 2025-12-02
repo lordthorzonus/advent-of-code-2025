@@ -15,6 +15,12 @@ impl IdRange {
             .filter(|id| is_repeated_sequence(id))
             .collect()
     }
+
+    pub fn get_invalid_ids_part2(&self) -> Vec<u64> {
+        (self.start..=self.end)
+            .filter(|id| is_repeated_pattern(*id))
+            .collect()
+    }
 }
 
 fn is_repeated_sequence(number: &u64) -> bool {
@@ -27,6 +33,15 @@ fn is_repeated_sequence(number: &u64) -> bool {
 
     let midpoint = length / 2;
     number_as_string[..midpoint] == number_as_string[midpoint..]
+}
+
+fn is_repeated_pattern(number: u64) -> bool {
+    let number_as_string = number.to_string();
+    let doubled = format!("{}{}", number_as_string, number_as_string);
+
+    let slice = &doubled[1..doubled.len() - 1];
+
+    slice.contains(&number_as_string)
 }
 
 impl FromStr for IdRange {
@@ -57,12 +72,25 @@ impl DaySolver for Day2Solver {
             .map(|line| line.parse())
             .collect::<Result<Vec<IdRange>, DayError>>()?;
 
-        let invalid_id_sum: u64 = id_ranges.iter().flat_map(|range| range.get_invalid_ids()).sum();
+        let invalid_id_sum: u64 = id_ranges
+            .iter()
+            .flat_map(|range| range.get_invalid_ids())
+            .sum();
         Ok(invalid_id_sum.to_string())
     }
 
     fn solve_part2(&self, input: &str) -> Result<String, DayError> {
-        Ok(String::from("Hello"))
+        let id_ranges: Vec<IdRange> = input
+            .lines()
+            .flat_map(|line| line.split(","))
+            .map(|line| line.parse())
+            .collect::<Result<Vec<IdRange>, DayError>>()?;
+
+        let invalid_id_sum: u64 = id_ranges
+            .iter()
+            .flat_map(|range| range.get_invalid_ids_part2())
+            .sum();
+        Ok(invalid_id_sum.to_string())
     }
 }
 
@@ -89,6 +117,6 @@ mod tests {
     #[test]
     fn part2() {
         let solution = Day2Solver {}.solve_part2(get_example_input()).unwrap();
-        assert_eq!(solution, "6")
+        assert_eq!(solution, "4174379265")
     }
 }
